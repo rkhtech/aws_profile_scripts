@@ -1,0 +1,6 @@
+set_aws_default_profile() {
+	newsettings=$(php ~/bin/aws_profile_scripts/AWSCredentials.php set-profile $1)
+	eval $newsettings
+}
+
+alias aws-profile=set_aws_default_profile

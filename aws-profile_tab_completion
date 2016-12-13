@@ -1,0 +1,16 @@
+_aws_profile_tab_completion()
+{
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts=$(php ~/bin/aws_profile_scripts/AWSCredentials.php list-profiles)
+
+    if [[ ${cur} == * ]] ; then
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        return 0
+    fi
+}
+
+complete -F _aws_profile_tab_completion aws-profile
+

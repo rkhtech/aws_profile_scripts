@@ -24,7 +24,11 @@ Example aws config files:
 output = json
 region = us-west-2
 
-[profile rkhtech]
+[profile primary1]
+output = json
+region = us-west-2
+
+[profile primary2]
 output = json
 region = us-west-2
 

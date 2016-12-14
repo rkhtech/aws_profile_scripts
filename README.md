@@ -1,10 +1,15 @@
-## contents should be placed in ~/bin/aws_profile_scripts**
+#Setup Instructions:
+### Download repo
+```
+git clone git@github.com:rkhtech/aws_profile_scripts.git ~/bin/aws_profile_scripts
+```
+* Contents should be placed in ~/bin/aws_profile_scripts
 
 ### create symlink to /etc/bash_completion.d/
 
     sudo ln -s ~/bin/aws_profile_scripts/aws-profile_tab_completion /etc/bash_completion.d/aws-profile_tab_completion
 
-### add the following line(s) to any of:   ~/.profile   ~/.bash_profile   ~/.bashrc
+### add the following line(s) to any of:   `~/.profile   ~/.bash_profile   ~/.bashrc`
 
 ```bash
 export AWS_DEFAULT_PROFILE=$(cat ~/.aws/current_profile)
@@ -14,7 +19,7 @@ source ~/bin/aws_profile_scripts/aws-profile_alias
 export PS1="[AWS:\$AWS_DEFAULT_PROFILE] \$ "
 ```
 
-### Usage:
+# Usage:
 
 ```bash
 [AWS:default] $ aws-profile primary1

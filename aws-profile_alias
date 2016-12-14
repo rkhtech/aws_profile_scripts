@@ -4,3 +4,4 @@ set_aws_default_profile() {
 }
 
 alias aws-profile=set_aws_default_profile
+alias aws-rotate-access-keys='php ~/bin/aws_profile_scripts/AWSCredentials.php rotate-all-keys'

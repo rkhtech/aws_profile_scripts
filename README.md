@@ -1,3 +1,16 @@
+#What is this for?
+My initial desire for creating this was to quickly change profiles when using the AWS CLI tools.  Before this tool I would have to use the `--profile` command repeately, and then I would forget which account I needed to change or I would use the wrong `--profile` or simply forget to use the option and end up executing an AWS command in the wrong account.  This was bad.
+
+So below in the Usage I've explained how easy it is to switch profiles, and I've also modified my prompt to show me what AWS account I'm currently working with.  
+
+## Features:
+* It creates an alias to a function that will change the environment variable `AWS_DEFAULT_PROFILE`
+* It scans the entire contents of your `~/.aws/config` and `~/.aws/credentials` to find all valid configuration options.  It will use this list to configure tab autocompletion helping the use of changing profiles.  
+* It also saves what your current profile is, so that next time a bash shell is created, you are exactly where you left off.
+* According to [Best Practices for Managing AWS Access Keys](http://docs.aws.amazon.com/general/latest/gr/aws-access-keys-best-practices.html#iam-user-access-keys) it is best to rotate your access keys periodically.  
+    * This repo also includes an alias for making that easy:
+    * `aws-rotate-access-keys`
+    
 #Setup Instructions:
 ### Download repo
 ```
@@ -25,7 +38,7 @@ export PS1="[AWS:\$AWS_DEFAULT_PROFILE] \$ "
 [AWS:default] $ aws-profile primary1
 [AWS:primary1] $ aws-profile secondary
 [AWS:secondary] $ aws-profile primary2
-[AWS:primary2] $ 
+[AWS:primary2] $ aws-rotate-access-keys
 ```
 
 

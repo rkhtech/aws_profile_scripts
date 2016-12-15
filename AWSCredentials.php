@@ -18,6 +18,7 @@ class AWSCredentials
     private $currentDefaultProfile;
 
     private $profiles;
+    private $numberOfKeys=0;
     private $aws_vars;
 
     private $returncode;
@@ -34,6 +35,8 @@ class AWSCredentials
         $this->set_local_env("AWS_CONFIG_FILE");
 
         $this->read_aws_configuration_file('credentials');
+        $this->numberOfKeys=count($this->profiles);
+        if (isset($this->profiles['default'])) $this->numberOfKeys--;
         $this->read_aws_configuration_file('config');
 
         if (isset($this->profiles['default'])) {
@@ -142,7 +145,7 @@ class AWSCredentials
             echo "export AWS_DEFAULT_PROFILE=$newDefaultProfileName\n";
             file_put_contents($currentprofilepath,$newDefaultProfileName);
             $this->returncode=0;
-            $this->changed=true;
+            $this->changedCredentials=true;
         } else {
             $allprofiles=array_keys($this->profiles);
             fprintf(STDERR,"Profile not found... Select from the following:\n");
@@ -159,22 +162,69 @@ class AWSCredentials
 
     public function rotateAccessKey($profilename) {
         if ($this->validProfileName($profilename)) {
-            $this->changed=true;
-            // do the magic
+            echo "Profile [$profilename] changes:\n";
+            $output=[];
+            $return_var=0;
+            exec("aws iam list-access-keys --profile $profilename",$output,$return_var);
+            if ($return_var) {
+                fprintf(STDERR,"Error: AWS Keys for profile [$profilename] are invalid\n");
+                return ($return_var);
+            }
+            $aws_list_access_keys=json_decode(implode("",$output),true);
+            if (count($aws_list_access_keys['AccessKeyMetadata']) > 1) {
+                fprintf(STDERR, "Profile Name: [$profilename]\n");
+                fprintf(STDERR, "Access Key Id: " . $this->profiles[$profilename]['credentials']['aws_access_key_id'] . "\n");
+                fprintf(STDERR, "Error Detected: You currently have more than one access key associated with this key id\n");
+                fprintf(STDERR, "and profile.  In order to rotate your keys, you must have only one key on your account.\n");
+                fprintf(STDERR, "Please login to your account on the Console, and delete all but a single key.\n");
+                fprintf(STDERR, "\n");
+                fprintf(STDERR, "%s\n",print_r($aws_list_access_keys,true));
+                fprintf(STDERR, "\n");
+                fprintf(STDERR, "YOU CAN DELETE ONE BY USING THE FOLLOWING COMMAND:\n\n");
+                fprintf(STDERR, "    aws iam delete-access-key --access-key-id ".$this->profiles[$profilename]['credentials']['aws_access_key_id']."\n");
+                fprintf(STDERR, "\n\n");
+                return(1);
+            } else {
+                $output=[];
+                exec("aws iam create-access-key --profile $profilename",$output,$return_var);
+                if ($return_var) {
+                    fprintf(STDERR,"Error: Could not create access key. \n%s\n",implode("\n",$output));
+                    return($return_var);
+                }
+                $new_access_key=json_decode(implode("",$output),true);
+
+                $old_credentials=$this->profiles[$profilename]['credentials'];
+                $this->profiles[$profilename]['credentials']['aws_access_key_id'] = $new_access_key['AccessKey']["AccessKeyId"];
+                $this->profiles[$profilename]['credentials']['aws_secret_access_key'] = $new_access_key['AccessKey']["SecretAccessKey"];
+
+                echo "OLD_CREDENTIALS: ";
+                print_r($old_credentials);
+                echo "NEW_CREDENTIALS: ";
+                print_r($this->profiles[$profilename]['credentials']);
+
+                shell_exec("aws iam delete-access-key --profile $profilename --access-key-id ${old_credentials['aws_access_key_id']}");
+
+                echo "\n";
+
+                $this->changedCredentials=true;
+            }
         }
+        return 0;
     }
 
     public function rotateAllAccessKeys() {
-
+        $i = 1;
         foreach ($this->profiles as $key => $value) {
-            if ($key == 'default') break;
+            if ($key == 'default') continue;
+            if (!isset($value['credentials'])) continue;
+            echo "($i of ".$this->numberOfKeys.") ";
+            $i++;
             $this->rotateAccessKey($key);
             if ($this->currentDefaultProfile == $key) {
                 $this->profiles['default']['credentials']['aws_access_key_id']=$this->profiles[$key]['credentials']['aws_access_key_id'];
                 $this->profiles['default']['credentials']['aws_secret_access_key']=$this->profiles[$key]['credentials']['aws_secret_access_key'];
             }
         }
-
     }
 
     private function validProfileName($profile) {
@@ -226,7 +276,7 @@ if ($argc >= 2) {
             }
             break;
         case 'rotate-all-keys':
-            @$aws->rotateAllAccessKeys();
+            $aws->rotateAllAccessKeys();
             break;
         default:
             usage();

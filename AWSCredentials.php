@@ -145,7 +145,6 @@ class AWSCredentials
             echo "export AWS_DEFAULT_PROFILE=$newDefaultProfileName\n";
             file_put_contents($currentprofilepath,$newDefaultProfileName);
             $this->returncode=0;
-            $this->changedCredentials=true;
         } else {
             $allprofiles=array_keys($this->profiles);
             fprintf(STDERR,"Profile not found... Select from the following:\n");

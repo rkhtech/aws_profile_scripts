@@ -19,42 +19,63 @@ function usage()
     exit(1);
 }
 
+foreach ($argv as $argument) {
+    switch ($argument) {
+
+    }
+}
+
 if ($argc >= 2) {
     switch ($argv[1]) {
+        case 'get-time-to-expire':
+            $AWSCredentials->validAssumedRoleCredentials();
+            $seconds = $AWSCredentials->getExpireSeconds();
+            $min = floor($seconds/60);
+            $sec = $seconds%60;
+            if ($min > 5) {
+                echo "about $min minutes.";
+            } else
+            if ($min > 1) {
+                echo "less than 5 minutes.";
+            } else {
+                echo "$seconds seconds.";
+            }
+//            echo sprintf("%02d:%02d (%s)",$min,$sec,$seconds);
+            break;
         case 'get-sdk-credentials-array':
-            print_r($aws->getSDKCredentialsArray());
+            print_r($AWSCredentials->getSDKCredentialsArray());
             break;
         case 'verify-assumed-role':
-            die($aws->validAssumedRoleCredentials($aws->getDefaultProfileName()));
+            die($AWSCredentials->validAssumedRoleCredentials($AWSCredentials->getDefaultProfileName()));
             break;
         case 'get_current_keys':
-            echo "[" . $aws->getDefaultProfileName() . "]\n";
-            echo "aws_access_key_id = ".$aws->getProfileKey()."\n";
-            echo "aws_secret_access_key = ".$aws->getProfileSecretKey()."\n";
+            echo "[" . $AWSCredentials->getDefaultProfileName() . "]\n";
+            echo "aws_access_key_id = ".$AWSCredentials->getProfileKey()."\n";
+            echo "aws_secret_access_key = ".$AWSCredentials->getProfileSecretKey()."\n";
             break;
         case 'get_env':
-            $aws->printEnv();
+            $AWSCredentials->printEnv();
             break;
         case 'list-profiles':
-            $aws->listProfiles();
+            $AWSCredentials->listProfiles();
             break;
         case 'set-profile':
             if ($argc == 3) {
-                @$aws->setDefaultProfileName($argv[2]);
-                die($aws->validAssumedRoleCredentials($argv[2]));
+                @$AWSCredentials->setDefaultProfileName($argv[2]);
+                die($AWSCredentials->validAssumedRoleCredentials($argv[2]));
             } else {
                 usage();
             }
             break;
         case 'rotate-key':
             if ($argc == 3) {
-                @$aws->rotateAccessKey($argv[2]);
+                @$AWSCredentials->rotateAccessKey($argv[2]);
             } else {
                 usage();
             }
             break;
         case 'rotate-all-keys':
-            $aws->rotateAllAccessKeys();
+            $AWSCredentials->rotateAllAccessKeys();
             break;
         default:
             usage();

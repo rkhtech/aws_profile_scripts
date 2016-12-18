@@ -14,6 +14,6 @@
  */
 
 require getenv("HOME")."/bin/aws_profile_scripts/AWSCredentials.php";
-$aws = new AWSCredentials();
-CFCredentials::set($aws->getSDKCredentialsArray());
+
+CFCredentials::set($AWSCredentials->getSDKCredentialsArray());
 

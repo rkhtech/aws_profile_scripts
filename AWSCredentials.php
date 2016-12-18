@@ -290,6 +290,13 @@ class AWSCredentials
         return 0;
     }
 
+    function getExpireSeconds() {
+        if (isset($this->profiles[$this->currentDefaultProfile]['tempcreds'])) {
+            return $this->profiles[$this->currentDefaultProfile]['tempcreds']['expires'];
+        }
+        return 0;
+    }
+
     function getSDKCredentialsArray() {
         $credentials = array();
         foreach ($this->profiles as $profilename => $data) {
@@ -346,6 +353,6 @@ class AWSCredentials
     }
 }
 
-$aws = new AWSCredentials();
+$AWSCredentials = new AWSCredentials();
 
 

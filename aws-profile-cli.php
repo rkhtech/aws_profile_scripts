@@ -21,12 +21,24 @@ function usage()
 
 if ($argc >= 2) {
     switch ($argv[1]) {
+        case 'verify-assumed-role':
+            die($aws->validAssumedRoleCredentials($aws->getDefaultProfileName()));
+            break;
+        case 'get_current_keys':
+            echo "[" . $aws->getDefaultProfileName() . "]\n";
+            echo "aws_access_key_id = ".$aws->getProfileKey()."\n";
+            echo "aws_secret_access_key = ".$aws->getProfileSecretKey()."\n";
+            break;
+        case 'get_env':
+            $aws->printEnv();
+            break;
         case 'list-profiles':
             $aws->listProfiles();
             break;
         case 'set-profile':
             if ($argc == 3) {
                 @$aws->setDefaultProfileName($argv[2]);
+                die($aws->validAssumedRoleCredentials($argv[2]));
             } else {
                 usage();
             }

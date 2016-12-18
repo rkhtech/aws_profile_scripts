@@ -15,7 +15,7 @@ class AWSCredentials
     private $keepallbackups=false;
     private $changedConfig=false;
     private $changedCredentials=false;
-    private $currentDefaultProfile;
+    private $currentDefaultProfile=false;
 
     private $profiles;
     private $numberOfKeys=0;
@@ -39,6 +39,7 @@ class AWSCredentials
         if (isset($this->profiles['default'])) $this->numberOfKeys--;
         $this->read_aws_configuration_file('config');
 
+
         if (isset($this->profiles['default'])) {
             $defaultKey=$this->profiles['default']['credentials']['aws_access_key_id'];
             foreach($this->profiles as $key => $value) {
@@ -48,6 +49,9 @@ class AWSCredentials
                     }
                 }
             }
+        }
+        if (isset($this->aws_vars['AWS_DEFAULT_PROFILE']) && isset($this->profiles[$this->aws_vars['AWS_DEFAULT_PROFILE']])) {  // env var OVERRIDES default in config files
+            $this->currentDefaultProfile = $this->aws_vars['AWS_DEFAULT_PROFILE'];
         }
     }
 
@@ -59,6 +63,24 @@ class AWSCredentials
 
     private function set_local_env($varname) {
         $this->aws_vars[$varname] = getenv($varname);
+    }
+
+    function printEnv() {
+        print_r($this->aws_vars);
+    }
+
+    function getProfileKey()
+    {
+        if (($this->currentDefaultProfile) && (isset($this->profiles[$this->currentDefaultProfile]['credentials'])))
+            return $this->profiles[$this->currentDefaultProfile]['credentials']['aws_access_key_id'];
+        return false;
+    }
+
+    function getProfileSecretKey()
+    {
+        if (($this->currentDefaultProfile) && (isset($this->profiles[$this->currentDefaultProfile]['credentials'])))
+            return $this->profiles[$this->currentDefaultProfile]['credentials']['aws_secret_access_key'];
+        return false;
     }
 
     private function backup_configuration($fullfilename) {
@@ -239,6 +261,90 @@ class AWSCredentials
         foreach ($profileArray as $profile) {
             echo "  $profile\n";
         }
+    }
+
+    # this function returns 1 if tempoary credentials from an assumed role have not expired, 2 if the credentials are static, or 0 if temp creds have expired.
+    function validAssumedRoleCredentials($profilename=NULL) {
+        if ($profilename === NULL) {
+            $profilename = $this->currentDefaultProfile;
+        }
+        if (isset($this->profiles[$profilename])) {
+            if (isset($this->profiles[$profilename]['credentials'])) {
+//                fprintf(STDERR,"Credentials profile [$profilename], success.\n");
+                return 2;
+            } // verified, because we are not assuming a role
+            $tempcreds = [
+                'expires' => -1,
+                ];
+//            print_r($this->profiles[$profilename]);
+            $filename = $profilename . "--" . str_replace([":", "/"], ["_", "-"], $this->profiles[$profilename]['config']['role_arn']) . ".json";
+//            fprintf(STDERR,"filename: $filename ");
+            if (file_exists(getenv("HOME")."/.aws/cli/cache/".$filename)) {
+//                fprintf(STDERR,"found!\n");
+                $creds = json_decode(file_get_contents(getenv("HOME")."/.aws/cli/cache/".$filename),true);
+                //print_r($creds);
+                $expires = new DateTime($creds['Credentials']['Expiration']);
+                //var_dump($expires);
+                $now = new DateTime();
+                //echo date_format($expires,"U")."\n";
+                //echo date_format($now,"U")."\n";
+                $tempcreds = $creds['Credentials'];
+                $tempcreds['expires'] = date_format($expires,"U") - date_format($now,"U");
+            }
+            $this->profiles[$profilename]['tempcreds'] = $tempcreds;
+//            fprintf(STDERR,print_r($this->profiles[$profilename],true));
+            if ($this->profiles[$profilename]['tempcreds']['expires'] > 0) return 1; // success because time to expire is greater than 0
+        }
+        return 0;
+    }
+
+    function getCredentialsArray() {
+        $credentials = array();
+        foreach ($this->profiles as $profilename => $data) {
+            if (isset($data['credentials']) && ($profilename != 'default')) {
+                $credentials[$profilename] = array(
+                    'key' => $data['credentials']['aws_access_key_id'],
+                    'secret' => $data['credentials']['aws_secret_access_key'],
+                );
+            }
+        }
+        return $credentials;
+    /*
+        array(
+
+            // Credentials for the development environment.
+            'development' => array(
+
+                // Amazon Web Services Key. Found in the AWS Security Credentials. You can also pass
+                // this value as the first parameter to a service constructor.
+                'key' => 'development-key',
+
+                // Amazon Web Services Secret Key. Found in the AWS Security Credentials. You can also
+                // pass this value as the second parameter to a service constructor.
+                'secret' => 'development-secret',
+
+                // This option allows you to configure a preferred storage type to use for caching by
+                // default. This can be changed later using the set_cache_config() method.
+                //
+                // Valid values are: `apc`, `xcache`, or a file system path such as `./cache` or
+                // `/tmp/cache/`.
+                'default_cache_config' => '',
+
+                // Determines which Cerificate Authority file to use.
+                //
+                // A value of boolean `false` will use the Certificate Authority file available on the
+                // system. A value of boolean `true` will use the Certificate Authority provided by the
+                // SDK. Passing a file system path to a Certificate Authority file (chmodded to `0755`)
+                // will use that.
+                //
+                // Leave this set to `false` if you're not sure.
+                'certificate_authority' => false
+            ),
+
+            // Specify a default credential set to use if there are more than one.
+            '@default' => 'development'
+        )
+            */
     }
 }
 

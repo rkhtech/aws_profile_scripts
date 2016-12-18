@@ -1,7 +1,15 @@
 set_aws_default_profile() {
 	if [ $# -eq 1 ]; then
 		newsettings=$(php ~/bin/aws_profile_scripts/aws-profile-cli.php set-profile $1)
+		validcredentials=$?
 		eval $newsettings
+#		echo "Credentials Validated: $validcredentials"
+#//		echo "eval $newsettings"
+		if [ $validcredentials -eq 0 ]; then
+#		    echo "Credentials Validated: $validcredentials"
+		    echo -n -e "Your AssumeRole Credentials have expired.  \nPlease "
+    		aws iam get-account-summary > /dev/null
+		fi
 	else
 		echo "Possible profiles to use:"
 		php ~/bin/aws_profile_scripts/aws-profile-cli.php list-profiles

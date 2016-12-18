@@ -3,6 +3,8 @@ My initial desire for creating this was to quickly change profiles when using th
 
 So below in the Usage I've explained how easy it is to switch profiles, and I've also modified my prompt to show me what AWS account I'm currently working with.  
 
+(Please note: I've only tested this on Ubuntu 16.04)
+
 ## Features:
 * It creates an alias to a function that will change the environment variable `AWS_DEFAULT_PROFILE`
 * It scans the entire contents of your `~/.aws/config` and `~/.aws/credentials` to find all valid configuration options.  It will use this list to configure tab autocompletion helping the use of changing profiles.  

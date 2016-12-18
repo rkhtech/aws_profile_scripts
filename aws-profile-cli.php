@@ -21,6 +21,9 @@ function usage()
 
 if ($argc >= 2) {
     switch ($argv[1]) {
+        case 'get-sdk-credentials-array':
+            print_r($aws->getSDKCredentialsArray());
+            break;
         case 'verify-assumed-role':
             die($aws->validAssumedRoleCredentials($aws->getDefaultProfileName()));
             break;

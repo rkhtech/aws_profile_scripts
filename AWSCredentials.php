@@ -270,24 +270,16 @@ class AWSCredentials
         }
         if (isset($this->profiles[$profilename])) {
             if (isset($this->profiles[$profilename]['credentials'])) {
-//                fprintf(STDERR,"Credentials profile [$profilename], success.\n");
                 return 2;
             } // verified, because we are not assuming a role
             $tempcreds = [
                 'expires' => -1,
                 ];
-//            print_r($this->profiles[$profilename]);
             $filename = $profilename . "--" . str_replace([":", "/"], ["_", "-"], $this->profiles[$profilename]['config']['role_arn']) . ".json";
-//            fprintf(STDERR,"filename: $filename ");
             if (file_exists(getenv("HOME")."/.aws/cli/cache/".$filename)) {
-//                fprintf(STDERR,"found!\n");
                 $creds = json_decode(file_get_contents(getenv("HOME")."/.aws/cli/cache/".$filename),true);
-                //print_r($creds);
                 $expires = new DateTime($creds['Credentials']['Expiration']);
-                //var_dump($expires);
                 $now = new DateTime();
-                //echo date_format($expires,"U")."\n";
-                //echo date_format($now,"U")."\n";
                 $tempcreds = $creds['Credentials'];
                 $tempcreds['expires'] = date_format($expires,"U") - date_format($now,"U");
             }
@@ -298,7 +290,7 @@ class AWSCredentials
         return 0;
     }
 
-    function getCredentialsArray() {
+    function getSDKCredentialsArray() {
         $credentials = array();
         foreach ($this->profiles as $profilename => $data) {
             if (isset($data['credentials']) && ($profilename != 'default')) {
@@ -307,6 +299,12 @@ class AWSCredentials
                     'secret' => $data['credentials']['aws_secret_access_key'],
                 );
             }
+        }
+        if (isset($credentials[$this->currentDefaultProfile])) {
+            $credentials['@default']=$this->currentDefaultProfile;
+        } else {
+            $keys=array_keys($credentials);
+            $credentials['@default']=$keys[0];
         }
         return $credentials;
     /*

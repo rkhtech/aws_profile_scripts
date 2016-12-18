@@ -29,7 +29,7 @@ export AWS_DEFAULT_PROFILE=$(cat ~/.aws/current_profile)
 source ~/bin/aws_profile_scripts/aws-profile_alias
 
 #optionally: reconfigure your PS1 value to include:
-export PS1="[AWS:\$AWS_DEFAULT_PROFILE] \$ "
+export PS1="\033[38;5;214m[AWS:\$AWS_DEFAULT_PROFILE] \$ "
 ```
 
 # Usage:

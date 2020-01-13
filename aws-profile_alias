@@ -1,4 +1,5 @@
 set_aws_default_profile() {
+	echo " Your MFA code for arn:aws:iam::118269568366:mfa/rhommel: "$(mfa infiniti)
 	if [ $# -eq 1 ]; then
 		newsettings=$(php ~/bin/aws_profile_scripts/aws-profile-cli.php set-profile $1)
 		validcredentials=$?

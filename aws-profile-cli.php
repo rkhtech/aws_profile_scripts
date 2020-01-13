@@ -16,6 +16,8 @@ function usage()
     echo "  rotate-key [profilename]\n";
     echo "  list-profiles\n";
     echo "  set-profile [profilename]\n";
+    echo "  get-key [profilename]\n";
+    echo "  get-secret [profilename]\n";
     exit(1);
 }
 
@@ -76,6 +78,16 @@ if ($argc >= 2) {
             break;
         case 'rotate-all-keys':
             $AWSCredentials->rotateAllAccessKeys();
+            break;
+        case 'get-key':
+            $profile = NULL;
+            if ($argc == 3) $profile=$argv[2];
+            echo $AWSCredentials->getProfileKey($argv[2]);
+            break;
+        case 'get-secret':
+            $profile = NULL;
+            if ($argc == 3) $profile=$argv[2];
+            echo $AWSCredentials->getProfileSecretKey($profile);
             break;
         default:
             usage();

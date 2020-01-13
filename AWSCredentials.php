@@ -16,12 +16,18 @@ class AWSCredentials
     private $changedConfig=false;
     private $changedCredentials=false;
     private $currentDefaultProfile=false;
+    private $AwsConfig;
+    private $AwsCredentials;
 
     private $profiles;
     private $numberOfKeys=0;
     private $aws_vars;
 
     private $returncode;
+
+    function debug() {
+        print_r($this->profiles);
+    }
 
     function __construct() {
 
@@ -34,10 +40,18 @@ class AWSCredentials
         $this->set_local_env("AWS_DEFAULT_PROFILE");
         $this->set_local_env("AWS_CONFIG_FILE");
 
-        $this->read_aws_configuration_file('credentials');
-        $this->numberOfKeys=count($this->profiles);
-        if (isset($this->profiles['default'])) $this->numberOfKeys--;
-        $this->read_aws_configuration_file('config');
+        $this->AwsCredentials = $this->read_aws_configuration_file('credentials');
+        $this->numberOfKeys=count($this->AwsCredentials);
+        if (isset($this->AwsCredentials['default'])) $this->numberOfKeys--;
+        $this->AwsConfig = $this->read_aws_configuration_file('config');
+        $this->profiles = [];
+        foreach ($this->AwsCredentials as $key=>$value) {
+            $this->profiles[$key]['credentials'] = $value;
+        }
+        foreach ($this->AwsConfig as $key=>$value) {
+            $key = str_replace('profile ','',$key);
+            $this->profiles[$key]['config'] = $value;
+        }
 
 
         if (isset($this->profiles['default'])) {
@@ -69,17 +83,25 @@ class AWSCredentials
         print_r($this->aws_vars);
     }
 
-    function getProfileKey()
+    function getProfileKey($profileName=NULL)
     {
-        if (($this->currentDefaultProfile) && (isset($this->profiles[$this->currentDefaultProfile]['credentials'])))
-            return $this->profiles[$this->currentDefaultProfile]['credentials']['aws_access_key_id'];
+        if ($profileName) {
+            return $this->profiles[$profileName]['credentials']['aws_access_key_id'];
+        } else {
+            if (($this->currentDefaultProfile) && (isset($this->profiles[$this->currentDefaultProfile]['credentials'])))
+                return $this->profiles[$this->currentDefaultProfile]['credentials']['aws_access_key_id'];
+        }
         return false;
     }
 
-    function getProfileSecretKey()
+    function getProfileSecretKey($profileName=NULL)
     {
-        if (($this->currentDefaultProfile) && (isset($this->profiles[$this->currentDefaultProfile]['credentials'])))
-            return $this->profiles[$this->currentDefaultProfile]['credentials']['aws_secret_access_key'];
+        if ($profileName) {
+            return $this->profiles[$profileName]['credentials']['aws_secret_access_key'];
+        } else {
+            if (($this->currentDefaultProfile) && (isset($this->profiles[$this->currentDefaultProfile]['credentials'])))
+               return $this->profiles[$this->currentDefaultProfile]['credentials']['aws_secret_access_key'];
+        }
         return false;
     }
 
@@ -108,22 +130,24 @@ class AWSCredentials
 
     private function read_aws_configuration_file($filename) {
         $fullfilename = $this->get_full_file_path($filename);
-        $configurationcontents_raw=file($fullfilename,FILE_SKIP_EMPTY_LINES|FILE_IGNORE_NEW_LINES);
-        $current_profile="";
-        foreach ($configurationcontents_raw as $line) {
-            if ($line[0]=='[') {
-                $start_index=1;
-                if (stripos($line,'profile ') !== false) {
-                    $start_index=9;
-                }
-                $current_profile=substr($line,$start_index,-1);
-            } else {
-                list($key,$value) = explode(" = ",$line);
-                $key=trim($key);
-                $value=trim($value);
-                $this->profiles[$current_profile][$filename][$key] = $value;
-            }
-        }
+        return parse_ini_file($fullfilename,true);
+
+//        $configurationcontents_raw=file($fullfilename,FILE_SKIP_EMPTY_LINES|FILE_IGNORE_NEW_LINES);
+//        $current_profile="";
+//        foreach ($configurationcontents_raw as $line) {
+//            if ($line[0]=='[') {
+//                $start_index=1;
+//                if (stripos($line,'profile ') !== false) {
+//                    $start_index=9;
+//                }
+//                $current_profile=substr($line,$start_index,-1);
+//            } else {
+//                list($key,$value) = explode(" = ",$line);
+//                $key=trim($key);
+//                $value=trim($value);
+//                $this->profiles[$current_profile][$filename][$key] = $value;
+//            }
+//        }
     }
 
     function save_aws_configuration_file($filename) {
@@ -202,7 +226,7 @@ class AWSCredentials
                 fprintf(STDERR, "%s\n",print_r($aws_list_access_keys,true));
                 fprintf(STDERR, "\n");
                 fprintf(STDERR, "YOU CAN DELETE ONE BY USING THE FOLLOWING COMMAND:\n\n");
-                fprintf(STDERR, "    aws iam delete-access-key --access-key-id ".$this->profiles[$profilename]['credentials']['aws_access_key_id']."\n");
+                fprintf(STDERR, "    aws iam delete-access-key --access-key-id ".$this->profiles[$profilename]['credentials']['aws_access_key_id']." --profile $profilename\n");
                 fprintf(STDERR, "\n\n");
                 return(1);
             } else {
@@ -235,6 +259,7 @@ class AWSCredentials
 
     public function rotateAllAccessKeys() {
         $i = 1;
+//        print_r($this->profiles);
         foreach ($this->profiles as $key => $value) {
             if ($key == 'default') continue;
             if (!isset($value['credentials'])) continue;
